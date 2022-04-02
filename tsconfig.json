@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES5",
     "module": "ESNext",
 
     /* Basic Options */
@@ -23,7 +23,10 @@
 
     /* Advanced Options */
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+
+    "outDir": "dist",
+    "declaration": true
   },
   "include": ["src/**/*"]
 }
