@@ -1,0 +1,27 @@
+{
+  "name": "@cj97/hook-style-di",
+  "version": "0.0.1",
+  "scripts": {
+    "build": "tsc",
+    "test": "npx jest"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository": "https://github.com/jcc1997",
+  "keywords": [
+    "typescript",
+    "di",
+    "ioc"
+  ],
+  "description": "hook style di implement",
+  "devDependencies": {
+    "@jest/globals": "^26.6.2",
+    "jest": "^26.6.3",
+    "ts-jest": "^26.5.6",
+    "typescript": "^4.2.4"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
+}
