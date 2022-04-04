@@ -1,66 +1,89 @@
 export interface InjectionKey<T> extends Symbol {}
 
-let hookMap:
-  | {
-      set<T>(key: InjectionKey<T>, ctorHook: () => T): void;
-      get<T>(key: InjectionKey<T>): () => T;
-    }
-  | undefined;
+type DIScopeCtx = {
+  ctorMap: {
+    set<T>(key: InjectionKey<T>, ctorHook: () => T): void;
+    get<T>(key: InjectionKey<T>): () => T;
+  };
+  instMap: {
+    set<T>(key: InjectionKey<T>, inst: T): void;
+    get<T>(key: InjectionKey<T>): T;
+  };
+  locks: InjectionKey<any>[];
+};
+let currentScopeCtx: DIScopeCtx | undefined;
 
-let instanceMap:
-  | {
-      set<T>(key: InjectionKey<T>, inst: T): void;
-      get<T>(key: InjectionKey<T>): T;
-    }
-  | undefined;
-
-let locks: InjectionKey<any>[] | undefined;
-
-export function provideDI<T>(key: InjectionKey<T>, ctorHook: () => T) {
-  if (!hookMap) throw new Error("must use in runDIScope");
-  hookMap.set(key, ctorHook);
+export function diProvide<T>(key: InjectionKey<T>, ctorHook: () => T) {
+  if (!currentScopeCtx) throw new Error("must use in di scope");
+  currentScopeCtx.ctorMap.set(key, ctorHook);
 }
-export function injectDI<T>(key: InjectionKey<T>): T {
-  if (!hookMap || !instanceMap || !locks) {
-    throw new Error("must use in runDIScope");
-  }
-  let service = instanceMap.get(key);
+export function diInject<T>(key: InjectionKey<T>): T {
+  if (!currentScopeCtx) throw new Error("must use in di scope");
+  let service = currentScopeCtx.instMap.get(key);
   if (!service) {
-    const hook = hookMap.get(key);
+    const hook = currentScopeCtx.ctorMap.get(key);
     if (!hook) {
       throw new Error(
         "did not provide " + key.toString() + " service hook in this di scope"
       );
     }
-    if (locks.includes(key))
-      throw new Error("recursively create " + key.toString());
+    // forbid circular dependency
+    if (currentScopeCtx.locks.includes(key))
+      throw new Error("CircularDependencyFound:" + currentScopeCtx.locks.map(v => v.toString()).join(' -> '));
 
-    locks.push(key);
+    currentScopeCtx.locks.push(key);
     service = hook();
-    locks.pop();
-    instanceMap.set(key, service);
+    currentScopeCtx.locks.pop();
+    currentScopeCtx.instMap.set(key, service);
   }
   return service;
 }
 
-export function createDIScope() {
-  const instance = {
-    hookMap: new Map(),
-    instanceMap: new Map(),
-    locks: [],
-  };
-  return function _di<T extends (di: typeof _di) => void>(fn: T) {
-    hookMap = instance.hookMap;
-    instanceMap = instance.instanceMap;
-    locks = instance.locks;
-    try {
-      fn(_di);
-    } finally {
-      hookMap = undefined;
-      instanceMap = undefined;
-      locks = undefined;
-    }
+export function diInjectNew<T>(key: InjectionKey<T>): T {
+  if (!currentScopeCtx) throw new Error("must use in di scope");
+  const hook = currentScopeCtx.ctorMap.get(key);
+  if (!hook) {
+    throw new Error(
+      "did not provide " + key.toString() + " service hook in this di scope"
+    );
+  }
+  if (currentScopeCtx.locks.includes(key))
+    throw new Error("recursively create " + key.toString());
+
+  currentScopeCtx.locks.push(key);
+  const service = hook();
+  currentScopeCtx.locks.pop();
+  return service;
+}
+
+function _createDIScope(ctx: DIScopeCtx) {
+  return {
+    run(fn: Function) {
+      if (currentScopeCtx) throw new Error("di conflicts");
+      currentScopeCtx = ctx;
+      try {
+        fn();
+      } finally {
+        currentScopeCtx = undefined;
+      }
+    },
   };
 }
 
-export type DI = ReturnType<typeof createDIScope>;
+export function createDIScope() {
+  const ctx: DIScopeCtx = {
+    ctorMap: new Map(),
+    instMap: new Map(),
+    locks: [],
+  };
+  return _createDIScope(ctx);
+}
+
+export function getCurrentScope(): DIScope | undefined {
+  if (currentScopeCtx) {
+    return _createDIScope(currentScopeCtx);
+  }
+  return undefined;
+}
+
+export type DIScope = ReturnType<typeof createDIScope>;

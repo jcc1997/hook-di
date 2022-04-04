@@ -1,6 +1,6 @@
 import { test } from "@jest/globals";
 import { expect, describe, jest } from "@jest/globals";
-import { injectDI, InjectionKey, provideDI, createDIScope, DI } from "../src";
+import { diInject, InjectionKey, diProvide, createDIScope, getCurrentScope } from "../src";
 
 interface IServiceA {
   a: string;
@@ -17,43 +17,45 @@ const IServiceB: InjectionKey<IServiceB> = Symbol("store b");
 
 describe("di tests", () => {
   jest.useFakeTimers();
-  function createServiceA() {
-    const storeB = injectDI(IServiceB);
-    return {
-      a: "storea",
-      hello() {
-        return storeB.hello() + "storea";
-      },
-    };
-  }
-
-  function createServiceB() {
-    return {
-      b: "storeb",
-      hello() {
-        return "storeb";
-      },
-    };
-  }
 
   test("test", () => {
-    function main(di: DI) {
-      provideDI(IServiceA, createServiceA);
-      provideDI(IServiceB, createServiceB);
+    function main() {
+      function createServiceA() {
+        const storeB = diInject(IServiceB);
+        return {
+          a: "storea",
+          hello() {
+            return storeB.hello() + "storea";
+          },
+        };
+      }
+    
+      function createServiceB() {
+        return {
+          b: "storeb",
+          hello() {
+            return "storeb";
+          },
+        };
+      }
+      diProvide(IServiceA, createServiceA);
+      diProvide(IServiceB, createServiceB);
 
-      const serviceA = injectDI(IServiceA);
+      const serviceA = diInject(IServiceA);
       expect(serviceA.hello()).toEqual("storebstorea");
 
+      const scope = getCurrentScope()!;
+
       setTimeout(() => {
-        di(() => {
-          const serviceB = injectDI(IServiceB);
+        scope.run(() => {
+          const serviceB = diInject(IServiceB);
           expect(serviceB.hello()).toEqual("storeb");
         });
       });
-      jest.runAllTimers();
     }
 
     const mainDI = createDIScope();
-    mainDI(main);
+    mainDI.run(main);
+    jest.runAllTimers();
   });
 });
