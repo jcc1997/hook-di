@@ -114,7 +114,7 @@ function createConfig(entry, buildName, output, plugins = []) {
   // const isNodeBuild = buildName === 'cjs'
   // const isBundlerESMBuild = buildName === 'browser' || buildName === 'mjs'
 
-  if (isGlobalBuild) output.name = 'HookStyleDi'
+  if (isGlobalBuild) output.name = 'HookDi'
 
   const shouldEmitDeclarations = !hasTSChecked
 

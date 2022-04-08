@@ -14,22 +14,22 @@ export type DIScopeCtx = {
 let currentScopeCtx: DIScopeCtx | undefined;
 
 export function diProvide<T>(key: InjectionKey<T>, ctorHook: () => T) {
-  if (!currentScopeCtx) throw new Error("must use in di scope");
+  if (!currentScopeCtx) throw new Error("hook-di: must use in di scope");
   currentScopeCtx.ctorMap.set(key, ctorHook);
 }
 export function diInject<T>(key: InjectionKey<T>): T {
-  if (!currentScopeCtx) throw new Error("must use in di scope");
+  if (!currentScopeCtx) throw new Error("hook-di: must use in di scope");
   let service = currentScopeCtx.instMap.get(key);
   if (!service) {
     const hook = currentScopeCtx.ctorMap.get(key);
     if (!hook) {
       throw new Error(
-        "did not provide " + key.toString() + " service hook in this di scope"
+        "hook-di: did not provide " + key.toString() + " service hook in this di scope"
       );
     }
     // forbid circular dependency
     if (currentScopeCtx.locks.includes(key))
-      throw new Error("CircularDependencyFound:" + currentScopeCtx.locks.map(v => v.toString()).join(' -> '));
+      throw new Error("hook-di: CircularDependencyFound:" + currentScopeCtx.locks.map(v => v.toString()).join(' -> '));
 
     currentScopeCtx.locks.push(key);
     service = hook();
@@ -40,15 +40,15 @@ export function diInject<T>(key: InjectionKey<T>): T {
 }
 
 export function diInjectNew<T>(key: InjectionKey<T>): T {
-  if (!currentScopeCtx) throw new Error("must use in di scope");
+  if (!currentScopeCtx) throw new Error("hook-di: must use in di scope");
   const hook = currentScopeCtx.ctorMap.get(key);
   if (!hook) {
     throw new Error(
-      "did not provide " + key.toString() + " service hook in this di scope"
+      "hook-di: did not provide " + key.toString() + " service hook in this di scope"
     );
   }
   if (currentScopeCtx.locks.includes(key))
-    throw new Error("recursively create " + key.toString());
+    throw new Error("hook-di: recursively create " + key.toString());
 
   currentScopeCtx.locks.push(key);
   const service = hook();
@@ -59,7 +59,7 @@ export function diInjectNew<T>(key: InjectionKey<T>): T {
 function _createDIScope(ctx: DIScopeCtx) {
   return {
     run<T extends (...args: any) => any = (...args: any) => any>(fn: T): ReturnType<T> {
-      if (currentScopeCtx) throw new Error("di conflicts");
+      if (currentScopeCtx) throw new Error("hook-di: di conflicts");
       currentScopeCtx = ctx;
       try {
         return fn();

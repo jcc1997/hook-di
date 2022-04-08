@@ -1,5 +1,5 @@
 import { DIScope, createDIScope, InjectionKey, diInject, diInjectNew, diProvide, getCurrentScope } from './core';
-import { getCurrentInstance, Plugin, App } from 'vue'
+import { getCurrentInstance, Plugin } from 'vue'
 export type { InjectionKey } from './core'
 
 function _getCtx(): DIScope | undefined {
@@ -10,7 +10,7 @@ const install: Plugin = function(app, fn) {
   const scope = createDIScope();
   app.config.globalProperties.$hook_di_ctx = scope;
   if (fn) {
-    if (typeof fn !== 'function') throw new Error('hook-style-di: option muse be function');
+    if (typeof fn !== 'function') throw new Error('hook-di: option muse be function');
     scope.run(fn);
   }
 }
@@ -19,7 +19,7 @@ function _runInScope<T extends (...args: any) => any = (...args: any) => any>(fn
   const scope = getCurrentScope();
   if (!scope) {
     const ctx = _getCtx();
-    if (!ctx) throw new Error('no di context');
+    if (!ctx) throw new Error('hook-di: no di context');
     return ctx.run(fn);
   } else {
     return fn();
