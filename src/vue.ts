@@ -10,38 +10,33 @@ const install: Plugin = function(app) {
   app.config.globalProperties.$hook_di_ctx = createDIScope();
 }
 
+function _runInScope<T extends (...args: any) => any = (...args: any) => any>(fn: T): ReturnType<T> {
+  const scope = getCurrentScope();
+  if (!scope) {
+    const ctx = _getCtx();
+    if (!ctx) throw new Error('no di context');
+    return ctx.run(fn);
+  } else {
+    return fn();
+  }
+}
+
 export function useDiProvide<T>(key: InjectionKey<T>, ctorHook: () => T) {
-  const ctx = _getCtx();
-  if (!ctx) throw new Error('no di context');
-  ctx.run(() => {
+  _runInScope(() => {
     diProvide(key, ctorHook);
   });
 }
 
 export function useDiInject<T>(key: InjectionKey<T>) {
-  const scope = getCurrentScope();
-  if (!scope) {
-    const ctx = _getCtx();
-    if (!ctx) throw new Error('no di context');
-    return ctx.run(() => {
-      return diInject(key);
-    });
-  } else {
+  return _runInScope(() => {
     return diInject(key);
-  }
+  });
 }
 
 export function useDiInjectNew<T>(key: InjectionKey<T>) {
-  const scope = getCurrentScope();
-  if (!scope) {
-    const ctx = _getCtx();
-    if (!ctx) throw new Error('no di context');
-    return ctx.run(() => {
-      return diInjectNew(key);
-    });
-  } else {
+  return _runInScope(() => {
     return diInjectNew(key);
-  }
+  });
 }
 
 export default install;
