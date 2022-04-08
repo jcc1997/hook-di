@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "scripts": {
     "build": "tsc",
-    "test": "npx jest"
+    "test": "vitest"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,9 +16,10 @@
   "description": "hook style di implement",
   "devDependencies": {
     "@jest/globals": "^26.6.2",
-    "jest": "^26.6.3",
-    "ts-jest": "^26.5.6",
-    "typescript": "^4.2.4"
+    "happy-dom": "^2.55.0",
+    "typescript": "^4.2.4",
+    "vitest": "^0.9.2",
+    "vue": "^3.2.31"
   },
   "license": "MIT",
   "publishConfig": {

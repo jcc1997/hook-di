@@ -1,5 +1,4 @@
-import { test } from "@jest/globals";
-import { expect, describe, jest } from "@jest/globals";
+import { it, describe, vi, expect } from 'vitest'
 import { diInject, InjectionKey, diProvide, createDIScope, getCurrentScope } from "../src";
 
 interface IServiceA {
@@ -15,29 +14,31 @@ interface IServiceB {
 const IServiceA: InjectionKey<IServiceA> = Symbol("store a");
 const IServiceB: InjectionKey<IServiceB> = Symbol("store b");
 
-describe("di tests", () => {
-  jest.useFakeTimers();
+function createServiceA() {
+  const storeB = diInject(IServiceB);
+  return {
+    a: "storea",
+    hello() {
+      return storeB.hello() + "storea";
+    },
+  };
+}
 
-  test("test", () => {
+function createServiceB() {
+  return {
+    b: "storeb",
+    hello() {
+      return "storeb";
+    },
+  };
+}
+
+describe("di tests", () => {
+  vi.useFakeTimers();
+
+  it("should work", () => {
     function main() {
-      function createServiceA() {
-        const storeB = diInject(IServiceB);
-        return {
-          a: "storea",
-          hello() {
-            return storeB.hello() + "storea";
-          },
-        };
-      }
-    
-      function createServiceB() {
-        return {
-          b: "storeb",
-          hello() {
-            return "storeb";
-          },
-        };
-      }
+      
       diProvide(IServiceA, createServiceA);
       diProvide(IServiceB, createServiceB);
 
@@ -56,6 +57,6 @@ describe("di tests", () => {
 
     const mainDI = createDIScope();
     mainDI.run(main);
-    jest.runAllTimers();
+    vi.runAllTimers();
   });
 });
