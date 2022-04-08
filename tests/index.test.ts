@@ -3,7 +3,7 @@ import { diInject, InjectionKey, diProvide, createDIScope, getCurrentScope } fro
 
 interface IServiceA {
   a: string;
-  hello: () => string;
+  hello(): string;
 }
 
 interface IServiceB {
