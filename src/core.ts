@@ -9,7 +9,7 @@ type DIScopeCtx = {
     set<T>(key: InjectionKey<T>, inst: T): void;
     get<T>(key: InjectionKey<T>): T;
   };
-  locks: InjectionKey<any>[];
+  stack: InjectionKey<any>[];
 };
 let currentScopeCtx: DIScopeCtx | undefined;
 
@@ -17,42 +17,45 @@ export function diProvide<T>(key: InjectionKey<T>, ctorHook: () => T) {
   if (!currentScopeCtx) throw new Error("hook-di: must use in di scope");
   currentScopeCtx.ctorMap.set(key, ctorHook);
 }
+
 export function diInject<T>(key: InjectionKey<T>): T {
   if (!currentScopeCtx) throw new Error("hook-di: must use in di scope");
-  let service = currentScopeCtx.instMap.get(key);
+  const { instMap, ctorMap, stack } = currentScopeCtx;
+  let service = instMap.get(key);
   if (!service) {
-    const hook = currentScopeCtx.ctorMap.get(key);
+    const hook = ctorMap.get(key);
     if (!hook) {
       throw new Error(
         "hook-di: did not provide " + key.toString() + " service hook in this di scope"
       );
     }
     // forbid circular dependency
-    if (currentScopeCtx.locks.includes(key))
-      throw new Error("hook-di: CircularDependencyFound:" + currentScopeCtx.locks.map(v => v.toString()).join(' -> '));
+    if (stack.includes(key))
+      throw new Error("hook-di: CircularDependencyFound:" + stack.map(v => v.toString()).join(' -> '));
 
-    currentScopeCtx.locks.push(key);
+    stack.push(key);
     service = hook();
-    currentScopeCtx.locks.pop();
-    currentScopeCtx.instMap.set(key, service);
+    stack.pop();
+    instMap.set(key, service);
   }
   return service;
 }
 
 export function diInjectNew<T>(key: InjectionKey<T>): T {
   if (!currentScopeCtx) throw new Error("hook-di: must use in di scope");
-  const hook = currentScopeCtx.ctorMap.get(key);
+  const { ctorMap, stack } = currentScopeCtx;
+  const hook = ctorMap.get(key);
   if (!hook) {
     throw new Error(
       "hook-di: did not provide " + key.toString() + " service hook in this di scope"
     );
   }
-  if (currentScopeCtx.locks.includes(key))
+  if (stack.includes(key))
     throw new Error("hook-di: recursively create " + key.toString());
 
-  currentScopeCtx.locks.push(key);
+  stack.push(key);
   const service = hook();
-  currentScopeCtx.locks.pop();
+  stack.pop();
   return service;
 }
 
@@ -74,7 +77,7 @@ export function createDIScope() {
   const ctx: DIScopeCtx = {
     ctorMap: new Map(),
     instMap: new Map(),
-    locks: [],
+    stack: [],
   };
   return _createDIScope(ctx);
 }
