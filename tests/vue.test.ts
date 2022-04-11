@@ -1,5 +1,5 @@
 import { it, describe, vi, expect } from 'vitest'
-import HookDi, { InjectionKey, useDiInject, useDiProvide } from "../src/vue";
+import { InjectionKey, useDiInject, useDiProvide, createDIScope } from "../src/vue";
 import { createApp } from 'vue';
 
 interface IServiceA {
@@ -51,7 +51,7 @@ describe("vue di tests", () => {
         expect(serviceB.hello()).toEqual("storeb");
       }
     });
-    app.use(HookDi);
+    app.use(createDIScope());
     app.mount(document.createElement('div'));
     app.unmount();
   });
@@ -66,7 +66,7 @@ describe("vue di tests", () => {
         expect(serviceB.hello()).toEqual("storeb");
       }
     });
-    app.use(HookDi, () => {
+    app.use(createDIScope(), () => {
       useDiProvide(IServiceA, createServiceA);
       useDiProvide(IServiceB, createServiceB);
 

@@ -52,7 +52,7 @@ describe("di tests", () => {
           const serviceB = diInject(IServiceB);
           expect(serviceB.hello()).toEqual("storeb");
         });
-      });
+      }, 1000);
     }
 
     const mainDI = createDIScope();

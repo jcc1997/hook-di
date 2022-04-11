@@ -1,6 +1,6 @@
 export interface InjectionKey<T> extends Symbol {}
 
-export type DIScopeCtx = {
+type DIScopeCtx = {
   ctorMap: {
     set<T>(key: InjectionKey<T>, ctorHook: () => T): void;
     get<T>(key: InjectionKey<T>): () => T;

@@ -1,4 +1,4 @@
-import { DIScope, createDIScope, InjectionKey, diInject, diInjectNew, diProvide, getCurrentScope } from './core';
+import { DIScope, createDIScope as _createDIScope, InjectionKey, diInject, diInjectNew, diProvide, getCurrentScope } from './core';
 import { getCurrentInstance, Plugin } from 'vue'
 export type { InjectionKey } from './core'
 
@@ -6,20 +6,11 @@ function _getCtx(): DIScope | undefined {
   return getCurrentInstance()?.appContext.config.globalProperties.$hook_di_ctx;
 }
 
-const install: Plugin = function(app, fn) {
-  const scope = createDIScope();
-  app.config.globalProperties.$hook_di_ctx = scope;
-  if (fn) {
-    if (typeof fn !== 'function') throw new Error('hook-di: option muse be function');
-    scope.run(fn);
-  }
-}
-
 function _runInScope<T extends (...args: any) => any = (...args: any) => any>(fn: T): ReturnType<T> {
   const scope = getCurrentScope();
   if (!scope) {
     const ctx = _getCtx();
-    if (!ctx) throw new Error('hook-di: no di context');
+    if (!ctx) throw new Error('hook-di/vue: no di scope');
     return ctx.run(fn);
   } else {
     return fn();
@@ -44,4 +35,17 @@ export function useDiInjectNew<T>(key: InjectionKey<T>) {
   });
 }
 
-export default install;
+export function createDIScope()  {
+  const scope = _createDIScope();
+  const install: Plugin = function(app, fn) {
+    app.config.globalProperties.$hook_di_ctx = scope;
+    if (fn) {
+      if (typeof fn !== 'function') throw new Error('hook-di/vue: option muse be function');
+      scope.run(fn);
+    }
+  }
+  return {
+    install,
+    run: scope.run,
+  }
+};
