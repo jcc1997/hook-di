@@ -1,5 +1,5 @@
 import { DIScope, createDIScope as _createDIScope, InjectionKey, diInject, diInjectNew, diProvide, getCurrentScope } from './core';
-import { getCurrentInstance, Plugin } from 'vue'
+import { getCurrentInstance } from 'vue'
 export type { InjectionKey } from './core'
 
 function _getCtx(): DIScope | undefined {
@@ -37,7 +37,7 @@ export function useDiInjectNew<T>(key: InjectionKey<T>) {
 
 export function createDIScope()  {
   const scope = _createDIScope();
-  const install: Plugin = function(app, fn) {
+  const install = function(app: any, fn: (...args: any) => any) {
     app.config.globalProperties.$hook_di_ctx = scope;
     if (fn) {
       if (typeof fn !== 'function') throw new Error('hook-di/vue: option muse be function');

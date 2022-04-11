@@ -27,6 +27,11 @@
       "import": "./dist/vue.mjs"
     }
   },
+  "typesVersions": {
+    "*": {
+      "vue": ["dist/vue.d.ts"]
+    }
+  },
   "repository": "https://github.com/cj97",
   "keywords": [
     "typescript",
