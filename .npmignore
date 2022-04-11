@@ -1,0 +1,7 @@
+node_modules
+src
+tests
+rollup.config.js
+pnpm-lock.yaml
+tsconfig.json
+vitest.config.ts
