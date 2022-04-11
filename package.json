@@ -29,7 +29,7 @@
   },
   "typesVersions": {
     "*": {
-      "vue": ["dist/vue.d.ts"]
+      "*": ["dist/*"]
     }
   },
   "repository": "https://github.com/cj97",
