@@ -41,7 +41,7 @@ function createServiceB(): IServiceB {
 }
 
 function createServiceA(): IServiceA {
-  const storeB = diInject(IServiceB);
+  const storeB = dInject(IServiceB);
   return {
     a: "storea",
     hello() {
@@ -54,21 +54,21 @@ function createServiceA(): IServiceA {
 manually provide dependencies and auto inject.
 
 ```typescript
-import { diInject, diProvide, createDIScope, getCurrentScope } from "../src";
+import { dInject, dProvide, createDIScope, getCurrentScope } from "../src";
 
 function main() {
       
-    diProvide(IServiceA, createServiceA);
-    diProvide(IServiceB, createServiceB);
+    dProvide(IServiceA, createServiceA);
+    dProvide(IServiceB, createServiceB);
 
-    const serviceA = diInject(IServiceA);
+    const serviceA = dInject(IServiceA);
     serviceA.hello(); // "storebstorea"
 
     // if want to pass the scope, use getCurrentScope
     const scope = getCurrentScope()!;
     setTimeout(() => {
         scope.run(() => {
-            const serviceB = diInject(IServiceB);
+            const serviceB = dInject(IServiceB);
             serviceB.hello(); // "storeb"
         });
     }, 1000);
@@ -80,15 +80,15 @@ createDIScope().run(main);
 ## use in `vue`
 
 ```typescript
-import { createDIScope, useDiInject, useDiProvide } from "hook-di/vue";
+import { createDIScope, useDInject, useDProvide } from "hook-di/vue";
 
 const app = createApp({
     setup() {
-        useDiProvide(IServiceA, createServiceA);
-        useDiProvide(IServiceB, createServiceB);
+        useDProvide(IServiceA, createServiceA);
+        useDProvide(IServiceB, createServiceB);
 
-        const serviceA = useDiInject(IServiceA);
-        const serviceB = useDiInject(IServiceB);
+        const serviceA = useDInject(IServiceA);
+        const serviceB = useDInject(IServiceB);
     }
 });
 app.use(createDIScope());
@@ -98,18 +98,18 @@ app.mount("#app");
 or
 
 ```typescript
-import HookDi, { useDiInject, useDiProvide } from "hook-di/vue";
+import HookDi, { useDInject, useDProvide } from "hook-di/vue";
 
 const app = createApp({
     setup() {
-        const serviceA = useDiInject(IServiceA);
-        const serviceB = useDiInject(IServiceB);
+        const serviceA = useDInject(IServiceA);
+        const serviceB = useDInject(IServiceB);
     }
 });
 // isolated context created in here
 app.use(createDIScope(), () => {
-    useDiProvide(IServiceA, createServiceA);
-    useDiProvide(IServiceB, createServiceB);
+    useDProvide(IServiceA, createServiceA);
+    useDProvide(IServiceB, createServiceB);
 });
 app.mount("#app");
 ```

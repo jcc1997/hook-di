@@ -13,12 +13,12 @@ type DIScopeCtx = {
 };
 let currentScopeCtx: DIScopeCtx | undefined;
 
-export function diProvide<T>(key: InjectionKey<T>, ctorHook: () => T) {
+export function dProvide<T>(key: InjectionKey<T>, ctorHook: () => T) {
   if (!currentScopeCtx) throw new Error("hook-di: must use in di scope");
   currentScopeCtx.ctorMap.set(key, ctorHook);
 }
 
-export function diInject<T>(key: InjectionKey<T>): T {
+export function dInject<T>(key: InjectionKey<T>): T {
   if (!currentScopeCtx) throw new Error("hook-di: must use in di scope");
   const { instMap, ctorMap, stack } = currentScopeCtx;
   let service = instMap.get(key);
@@ -41,7 +41,7 @@ export function diInject<T>(key: InjectionKey<T>): T {
   return service;
 }
 
-export function diInjectNew<T>(key: InjectionKey<T>): T {
+export function dInjectNew<T>(key: InjectionKey<T>): T {
   if (!currentScopeCtx) throw new Error("hook-di: must use in di scope");
   const { ctorMap, stack } = currentScopeCtx;
   const hook = ctorMap.get(key);
@@ -72,13 +72,13 @@ function _createDIScope(ctx: DIScopeCtx) {
   return {
     run,
     provide<T>(key: InjectionKey<T>, ctorHook: () => T) {
-      run(() => diProvide(key, ctorHook));
+      run(() => dProvide(key, ctorHook));
     },
     inject<T>(key: InjectionKey<T>): T {
-      return run(() => diInject(key));
+      return run(() => dInject(key));
     },
     injectNew<T>(key: InjectionKey<T>): T {
-      return run(() => diInjectNew(key));
+      return run(() => dInjectNew(key));
     },
   };
 }

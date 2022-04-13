@@ -1,4 +1,4 @@
-import { DIScope, createDIScope as _createDIScope, InjectionKey, diInject, diInjectNew, diProvide, getCurrentScope } from './core';
+import { DIScope, createDIScope as _createDIScope, InjectionKey, dInject, dInjectNew, dProvide, getCurrentScope } from './core';
 import { getCurrentInstance } from 'vue'
 export type { InjectionKey } from './core'
 
@@ -17,21 +17,21 @@ function _runInScope<T extends (...args: any) => any = (...args: any) => any>(fn
   }
 }
 
-export function useDiProvide<T>(key: InjectionKey<T>, ctorHook: () => T) {
+export function useDProvide<T>(key: InjectionKey<T>, ctorHook: () => T) {
   _runInScope(() => {
-    diProvide(key, ctorHook);
+    dProvide(key, ctorHook);
   });
 }
 
-export function useDiInject<T>(key: InjectionKey<T>) {
+export function useDInject<T>(key: InjectionKey<T>) {
   return _runInScope(() => {
-    return diInject(key);
+    return dInject(key);
   });
 }
 
-export function useDiInjectNew<T>(key: InjectionKey<T>) {
+export function useDInjectNew<T>(key: InjectionKey<T>) {
   return _runInScope(() => {
-    return diInjectNew(key);
+    return dInjectNew(key);
   });
 }
 

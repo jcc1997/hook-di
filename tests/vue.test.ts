@@ -1,7 +1,7 @@
 import { it, describe, vi, expect } from 'vitest'
-import { InjectionKey, useDiInject, useDiProvide, createDIScope, useDIScope } from "../src/vue";
+import { InjectionKey, useDInject, useDProvide, createDIScope, useDIScope, useDInjectNew } from "../src/vue";
 import { createApp } from 'vue';
-import { diInject } from '../src/core';
+import { dInject } from '../src/core';
 
 interface IServiceA {
   a: string;
@@ -24,7 +24,7 @@ const IServiceC: InjectionKey<IServiceC> = Symbol("store c");
 
 
 function createServiceA() {
-  const storeB = useDiInject(IServiceB);
+  const storeB = useDInject(IServiceB);
   return {
     a: "storea",
     hello() {
@@ -43,8 +43,8 @@ function createServiceB() {
 }
 
 function createServiceC() {
-  const storeA = diInject(IServiceA);
-  const storeB = diInject(IServiceB);
+  const storeA = dInject(IServiceA);
+  const storeB = dInject(IServiceB);
   return {
     a: "storec",
     hello() {
@@ -59,10 +59,10 @@ describe("vue di tests", () => {
   it("should work", () => {
     const app = createApp({
       setup() {
-        useDiProvide(IServiceA, createServiceA);
-        useDiProvide(IServiceB, createServiceB);
+        useDProvide(IServiceA, createServiceA);
+        useDProvide(IServiceB, createServiceB);
 
-        const serviceA = useDiInject(IServiceA);
+        const serviceA = useDInject(IServiceA);
         expect(serviceA.hello()).toEqual("storebstorea");
 
         const serviceB = useDIScope().inject(IServiceB);
@@ -77,18 +77,18 @@ describe("vue di tests", () => {
   it("should work outside", () => {
     const app = createApp({
       setup() {
-        const serviceA = useDiInject(IServiceA);
+        const serviceA = useDInject(IServiceA);
         expect(serviceA.hello()).toEqual("storebstorea");
 
-        const serviceB = useDiInject(IServiceB);
+        const serviceB = useDInject(IServiceB);
         expect(serviceB.hello()).toEqual("storeb");
       }
     });
     app.use(createDIScope(), () => {
-      useDiProvide(IServiceA, createServiceA);
-      useDiProvide(IServiceB, createServiceB);
+      useDProvide(IServiceA, createServiceA);
+      useDProvide(IServiceB, createServiceB);
 
-      const serviceA = useDiInject(IServiceA);
+      const serviceA = useDInject(IServiceA);
       expect(serviceA.hello()).toEqual("storebstorea");
     });
     app.mount(document.createElement('div'));
@@ -98,10 +98,10 @@ describe("vue di tests", () => {
   it("should work separated", () => {
     const app = createApp({
       setup() {
-        const serviceA = useDiInject(IServiceA);
+        const serviceA = useDInject(IServiceA);
         expect(serviceA.hello()).toEqual("storebstorea");
 
-        const serviceB = useDiInject(IServiceB);
+        const serviceB = useDInject(IServiceB);
         expect(serviceB.hello()).toEqual("storeb");
       }
     });
@@ -116,8 +116,25 @@ describe("vue di tests", () => {
   it("should work using core.ts", () => {
     const app = createApp({
       setup() {
-        const serviceC = useDiInject(IServiceC);
+        const serviceC = useDInject(IServiceC);
         expect(serviceC.hello()).toEqual("storebstoreastorebstorec");
+      }
+    });
+    const scope = createDIScope();
+    app.use(scope);
+    scope.provide(IServiceA, createServiceA);
+    scope.provide(IServiceB, createServiceB);
+    scope.provide(IServiceC, createServiceC);
+    app.mount(document.createElement('div'));
+    app.unmount();
+  });
+
+  it("should not equal", () => {
+    const app = createApp({
+      setup() {
+        const serviceC = useDInject(IServiceC);
+        const serviceC2 = useDInjectNew(IServiceC);
+        expect(serviceC !== serviceC2).toBeTruthy();
       }
     });
     const scope = createDIScope();
