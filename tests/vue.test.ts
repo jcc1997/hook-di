@@ -76,4 +76,22 @@ describe("vue di tests", () => {
     app.mount(document.createElement('div'));
     app.unmount();
   });
+
+  it("should work separated", () => {
+    const app = createApp({
+      setup() {
+        const serviceA = useDiInject(IServiceA);
+        expect(serviceA.hello()).toEqual("storebstorea");
+
+        const serviceB = useDiInject(IServiceB);
+        expect(serviceB.hello()).toEqual("storeb");
+      }
+    });
+    const scope = createDIScope();
+    app.use(scope);
+    scope.provide(IServiceA, createServiceA);
+    scope.provide(IServiceB, createServiceB);
+    app.mount(document.createElement('div'));
+    app.unmount();
+  });
 });

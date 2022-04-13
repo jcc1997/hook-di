@@ -46,6 +46,9 @@ export function createDIScope()  {
   }
   return {
     install,
-    run: scope.run,
+    run: scope.run.bind(scope),
+    provide: scope.provide.bind(scope),
+    inject: scope.inject.bind(scope),
+    injectNew: scope.injectNew.bind(scope),
   }
 };

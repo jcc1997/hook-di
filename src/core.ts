@@ -60,15 +60,25 @@ export function diInjectNew<T>(key: InjectionKey<T>): T {
 }
 
 function _createDIScope(ctx: DIScopeCtx) {
+  function run<T extends (...args: any) => any = (...args: any) => any>(fn: T): ReturnType<T> {
+    if (currentScopeCtx) throw new Error("hook-di: di conflicts");
+    currentScopeCtx = ctx;
+    try {
+      return fn();
+    } finally {
+      currentScopeCtx = undefined;
+    }
+  };
   return {
-    run<T extends (...args: any) => any = (...args: any) => any>(fn: T): ReturnType<T> {
-      if (currentScopeCtx) throw new Error("hook-di: di conflicts");
-      currentScopeCtx = ctx;
-      try {
-        return fn();
-      } finally {
-        currentScopeCtx = undefined;
-      }
+    run,
+    provide<T>(key: InjectionKey<T>, ctorHook: () => T) {
+      run(() => diProvide(key, ctorHook));
+    },
+    inject<T>(key: InjectionKey<T>): T {
+      return run(() => diInject(key));
+    },
+    injectNew<T>(key: InjectionKey<T>): T {
+      return run(() => diInjectNew(key));
     },
   };
 }
