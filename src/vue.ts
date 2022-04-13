@@ -2,14 +2,14 @@ import { DIScope, createDIScope as _createDIScope, InjectionKey, diInject, diInj
 import { getCurrentInstance } from 'vue'
 export type { InjectionKey } from './core'
 
-function _getCtx(): DIScope | undefined {
+export function useDIScope(): DIScope | undefined {
   return getCurrentInstance()?.appContext.config.globalProperties.$hook_di_ctx;
 }
 
 function _runInScope<T extends (...args: any) => any = (...args: any) => any>(fn: T): ReturnType<T> {
   const scope = getCurrentScope();
   if (!scope) {
-    const ctx = _getCtx();
+    const ctx = useDIScope();
     if (!ctx) throw new Error('hook-di/vue: no di scope');
     return ctx.run(fn);
   } else {
