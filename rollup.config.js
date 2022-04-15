@@ -77,7 +77,7 @@ const packageConfigs = packageBuilds.map((format) =>
   createConfig('index', format, outputConfigs[format])
 )
 
-const vueBuilds = Object.keys(outputConfigs)
+const vueBuilds = Object.keys(vueOutputConfigs)
 packageConfigs.push(...vueBuilds.map((format) =>
   createConfig('vue', format, vueOutputConfigs[format])
 ))
