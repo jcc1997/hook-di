@@ -33,7 +33,7 @@
       "*": ["dist/*"]
     }
   },
-  "repository": "https://github.com/cj97",
+  "repository": "https://github.com/jcc1997/hook-di",
   "keywords": [
     "typescript",
     "hook",
