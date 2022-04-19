@@ -100,7 +100,7 @@ subProvision.specify(IServiceB, createServiceB2);
 ## use in `vue`
 
 ```typescript
-import HookDi, { useInject, useProvide } from "hook-di/vue";
+import { createDIScope, useInject, useProvide } from "hook-di/vue";
 
 const app = createApp({
     setup() {
