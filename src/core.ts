@@ -1,100 +1,194 @@
-export interface InjectionKey<T> extends Symbol {}
+interface IInjectionKey<T> extends Symbol {}
+export type InjectionKey<T> = symbol & IInjectionKey<T>;
 
-type DIScopeCtx = {
-  ctorMap: {
-    set<T>(key: InjectionKey<T>, ctorHook: () => T): void;
-    get<T>(key: InjectionKey<T>): () => T;
+type ServiceContextMap = {
+  init(): void;
+  value?: {
+    set<T>(key: InjectionKey<T>, context: ServiceContext<T>): void;
+    get<T>(key: InjectionKey<T>): ServiceContext<T> | undefined;
   };
-  instMap: {
-    set<T>(key: InjectionKey<T>, inst: T): void;
-    get<T>(key: InjectionKey<T>): T;
-  };
-  stack: InjectionKey<any>[];
 };
-let currentScopeCtx: DIScopeCtx | undefined;
 
-export function dProvide<T>(key: InjectionKey<T>, ctorHook: () => T) {
-  if (!currentScopeCtx) throw new Error("hook-di: must use in di scope");
-  currentScopeCtx.ctorMap.set(key, ctorHook);
-}
+type RootServiceContextMap = Required<Pick<ServiceContextMap, 'value'>>;
 
-export function dInject<T>(key: InjectionKey<T>): T {
-  if (!currentScopeCtx) throw new Error("hook-di: must use in di scope");
-  const { instMap, ctorMap, stack } = currentScopeCtx;
-  let service = instMap.get(key);
-  if (!service) {
-    const hook = ctorMap.get(key);
-    if (!hook) {
-      throw new Error(
-        "hook-di: did not provide " + key.toString() + " service hook in this di scope"
-      );
-    }
-    // forbid circular dependency
-    if (stack.includes(key))
-      throw new Error("hook-di: CircularDependencyFound:" + stack.map(v => v.toString()).join(' -> '));
+type ServiceContext<T> = [
+  provider: () => T,
+  injection: T | undefined,
+  map: ServiceContextMap
+];
 
-    stack.push(key);
-    service = hook();
-    stack.pop();
-    instMap.set(key, service);
-  }
-  return service;
-}
+type DIContext = {
+  callStack: Function[];
+  contextMapStack: (ServiceContextMap | undefined)[];
+  rootContextMap: RootServiceContextMap;
+};
 
-export function dInjectNew<T>(key: InjectionKey<T>): T {
-  if (!currentScopeCtx) throw new Error("hook-di: must use in di scope");
-  const { ctorMap, stack } = currentScopeCtx;
-  const hook = ctorMap.get(key);
-  if (!hook) {
+type Provider<T> = {
+  (): T;
+  __di_symbol__: InjectionKey<T>;
+};
+
+let currentRootDIContext: DIContext | undefined;
+
+export type Provision = {
+  specify<T>(key: InjectionKey<T>, provider: () => T): Provision;
+};
+
+export function provide<T>(key: InjectionKey<T>, ctorHook: () => T): Provision {
+  if (!currentRootDIContext) throw new Error("hook-di: must use in di scope");
+  const { rootContextMap } = currentRootDIContext;
+  const provider = ctorHook as Provider<T>;
+  if (provider.__di_symbol__ && provider.__di_symbol__ !== key) {
     throw new Error(
-      "hook-di: did not provide " + key.toString() + " service hook in this di scope"
+      `hook-di: this function has been provided ${provider.__di_symbol__.toString()} once.`
     );
   }
-  if (stack.includes(key))
-    throw new Error("hook-di: recursively create " + key.toString());
-
-  stack.push(key);
-  const service = hook();
-  stack.pop();
-  return service;
+  provider.__di_symbol__ = key;
+  function _newContextMap(): ServiceContextMap {
+    return {
+      init() {
+        this.value = new Map();
+      },
+      value: undefined,
+    };
+  }
+  const serviceContextMap = _newContextMap();
+  rootContextMap.value!.set(key, [provider, undefined, serviceContextMap]);
+  // prevent inject before provide specified.
+  let isTooLate = false;
+  Promise.resolve().then(() => {
+    isTooLate = true;
+  });
+  function _newProvision(parentMap: ServiceContextMap): Provision {
+    return {
+      specify<T>(key: InjectionKey<T>, ctorHook: () => T) {
+        if (isTooLate) throw new Error("specify too late");
+        const s_provider = ctorHook as Provider<T>;
+        const s_map = _newContextMap();
+        if (!parentMap.value) parentMap.init();
+        parentMap.value!.set(key, [s_provider, undefined, s_map]);
+        return _newProvision(s_map);
+      },
+    };
+  }
+  return _newProvision(serviceContextMap);
 }
 
-function _createDIScope(ctx: DIScopeCtx) {
-  function run<T extends (...args: any) => any = (...args: any) => any>(fn: T): ReturnType<T> {
-    if (currentScopeCtx) throw new Error("hook-di: di conflicts");
-    currentScopeCtx = ctx;
+function _endOfArray<T>(arr: T[]) {
+  return arr[arr.length - 1];
+}
+
+function _getKey(v: any) {
+  return v.__di_symbol__ as symbol;
+}
+
+export function inject<T>(key: InjectionKey<T>): T {
+  if (!currentRootDIContext) throw new Error("hook-di: must use in di scope");
+  const { rootContextMap, callStack, contextMapStack } = currentRootDIContext;
+  const hasParent = callStack.length > 0;
+  const parentContextMap = hasParent ? _endOfArray(contextMapStack) : undefined;
+  const currentContextFromParent = parentContextMap?.value?.get(key);
+  const currentContextFromRoot = rootContextMap.value.get(key);
+  const currentContext = currentContextFromParent || currentContextFromRoot;
+  if (!currentContext) {
+    throw new Error(
+      "hook-di: did not provide " +
+        key.toString() +
+        " service hook in this di scope"
+    );
+  }
+  const provider = currentContext[0];
+  let injection = currentContext[1];
+  const contextMap = currentContext[2];
+  if (!injection) {
+    if (callStack.includes(provider))
+      throw new Error(
+        `hook-di: CircularDependencyFound, creating ${_getKey(
+          provider
+        ).toString()} in ` +
+          callStack.map((v) => _getKey(v).toString()).join(" -> ")
+      );
+    callStack.push(provider);
+    contextMapStack.push(contextMap);
+    injection = provider();
+    currentContext[1] = injection;
+    callStack.pop();
+    contextMapStack.pop();
+  }
+  return injection;
+}
+
+export function injectNew<T>(key: InjectionKey<T>): T {
+  if (!currentRootDIContext) throw new Error("hook-di: must use in di scope");
+  const { rootContextMap, callStack, contextMapStack } = currentRootDIContext;
+  const hasParent = callStack.length > 0;
+  const parentContextMap = hasParent ? _endOfArray(contextMapStack) : undefined;
+  const currentContextFromParent = parentContextMap?.value?.get(key);
+  const currentContextFromRoot = rootContextMap.value.get(key);
+  const currentContext = currentContextFromParent || currentContextFromRoot;
+  if (!currentContext) {
+    throw new Error(
+      "hook-di: did not provide " +
+        key.toString() +
+        " service hook in this di scope"
+    );
+  }
+  const provider = currentContext[0];
+  if (callStack.includes(provider))
+    throw new Error(
+      `hook-di: CircularDependencyFound, creating ${_getKey(
+        provider
+      ).toString()} in ` +
+        callStack.map((v) => _getKey(v).toString()).join(" -> ")
+    );
+  callStack.push(provider);
+  contextMapStack.push(currentContext[2]);
+  const injection = provider();
+  callStack.pop();
+  contextMapStack.pop();
+  return injection;
+}
+
+function _createDIScope(ctx: DIContext) {
+  function run<T extends (...args: any) => any = (...args: any) => any>(
+    fn: T
+  ): ReturnType<T> {
+    if (currentRootDIContext) throw new Error("hook-di: di conflicts");
+    currentRootDIContext = ctx;
     try {
       return fn();
     } finally {
-      currentScopeCtx = undefined;
+      currentRootDIContext = undefined;
     }
-  };
+  }
   return {
     run,
     provide<T>(key: InjectionKey<T>, ctorHook: () => T) {
-      run(() => dProvide(key, ctorHook));
+      return run(() => provide(key, ctorHook));
     },
     inject<T>(key: InjectionKey<T>): T {
-      return run(() => dInject(key));
+      return run(() => inject(key));
     },
     injectNew<T>(key: InjectionKey<T>): T {
-      return run(() => dInjectNew(key));
+      return run(() => injectNew(key));
     },
   };
 }
 
 export function createDIScope() {
-  const ctx: DIScopeCtx = {
-    ctorMap: new Map(),
-    instMap: new Map(),
-    stack: [],
+  const ctx: DIContext = {
+    rootContextMap: {
+      value: new Map(),
+    },
+    callStack: [],
+    contextMapStack: [],
   };
   return _createDIScope(ctx);
 }
 
 export function getCurrentScope(): DIScope | undefined {
-  if (currentScopeCtx) {
-    return _createDIScope(currentScopeCtx);
+  if (currentRootDIContext) {
+    return _createDIScope(currentRootDIContext);
   }
   return undefined;
 }

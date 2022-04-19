@@ -1,30 +1,26 @@
-import { it, describe, vi, expect } from 'vitest'
-import { InjectionKey, useDInject, useDProvide, createDIScope, useDIScope, useDInjectNew } from "../src/vue";
-import { createApp } from 'vue';
-import { dInject } from '../src/core';
-
-interface IServiceA {
-  a: string;
-  hello(): string;
-}
-
-interface IServiceB {
-  b: string;
-  hello(): string;
-}
-
-interface IServiceC {
-  c: string;
-  hello(): string;
-}
-
-const IServiceA: InjectionKey<IServiceA> = Symbol("store a");
-const IServiceB: InjectionKey<IServiceB> = Symbol("store b");
-const IServiceC: InjectionKey<IServiceC> = Symbol("store c");
-
+import { it, describe, vi, expect } from "vitest";
+import {
+  useInject,
+  useProvide,
+  createDIScope,
+  useDIScope,
+  useInjectNew,
+} from "../src/vue";
+import { createApp } from "vue";
+import { inject } from "../src/core";
+import {
+  // createServiceA,
+  createServiceA2,
+  // createServiceB,
+  createServiceB2,
+  // createServiceC,Î
+  IServiceA,
+  IServiceB,
+  IServiceC,
+} from "./services";
 
 function createServiceA() {
-  const storeB = useDInject(IServiceB);
+  const storeB = useInject(IServiceB);
   return {
     a: "storea",
     hello() {
@@ -43,10 +39,10 @@ function createServiceB() {
 }
 
 function createServiceC() {
-  const storeA = dInject(IServiceA);
-  const storeB = dInject(IServiceB);
+  const storeA = inject(IServiceA);
+  const storeB = inject(IServiceB);
   return {
-    a: "storec",
+    c: "storec",
     hello() {
       return storeA.hello() + storeB.hello() + "storec";
     },
@@ -55,94 +51,125 @@ function createServiceC() {
 
 describe("vue di tests", () => {
   vi.useFakeTimers();
-  
+
   it("should work", () => {
     const app = createApp({
+      render() {},
       setup() {
-        useDProvide(IServiceA, createServiceA);
-        useDProvide(IServiceB, createServiceB);
+        useProvide(IServiceA, createServiceA);
+        useProvide(IServiceB, createServiceB);
 
-        const serviceA = useDInject(IServiceA);
+        const serviceA = useInject(IServiceA);
         expect(serviceA.hello()).toEqual("storebstorea");
 
         const serviceB = useDIScope().inject(IServiceB);
         expect(serviceB.hello()).toEqual("storeb");
-      }
+      },
     });
     app.use(createDIScope());
-    app.mount(document.createElement('div'));
+    app.mount(document.createElement("div"));
     app.unmount();
   });
 
   it("should work outside", () => {
     const app = createApp({
+      render() {},
       setup() {
-        const serviceA = useDInject(IServiceA);
+        const serviceA = useInject(IServiceA);
         expect(serviceA.hello()).toEqual("storebstorea");
 
-        const serviceB = useDInject(IServiceB);
+        const serviceB = useInject(IServiceB);
         expect(serviceB.hello()).toEqual("storeb");
-      }
+      },
     });
     app.use(createDIScope(), () => {
-      useDProvide(IServiceA, createServiceA);
-      useDProvide(IServiceB, createServiceB);
+      useProvide(IServiceA, createServiceA);
+      useProvide(IServiceB, createServiceB);
 
-      const serviceA = useDInject(IServiceA);
+      const serviceA = useInject(IServiceA);
       expect(serviceA.hello()).toEqual("storebstorea");
     });
-    app.mount(document.createElement('div'));
+    app.mount(document.createElement("div"));
     app.unmount();
   });
 
   it("should work separated", () => {
     const app = createApp({
+      render() {},
       setup() {
-        const serviceA = useDInject(IServiceA);
+        const serviceA = useInject(IServiceA);
         expect(serviceA.hello()).toEqual("storebstorea");
 
-        const serviceB = useDInject(IServiceB);
+        const serviceB = useInject(IServiceB);
         expect(serviceB.hello()).toEqual("storeb");
-      }
+      },
     });
     const scope = createDIScope();
     app.use(scope);
     scope.provide(IServiceA, createServiceA);
     scope.provide(IServiceB, createServiceB);
-    app.mount(document.createElement('div'));
+    app.mount(document.createElement("div"));
     app.unmount();
   });
 
   it("should work using core.ts", () => {
     const app = createApp({
+      render() {},
       setup() {
-        const serviceC = useDInject(IServiceC);
+        const serviceC = useInject(IServiceC);
         expect(serviceC.hello()).toEqual("storebstoreastorebstorec");
-      }
+      },
     });
     const scope = createDIScope();
     app.use(scope);
     scope.provide(IServiceA, createServiceA);
     scope.provide(IServiceB, createServiceB);
     scope.provide(IServiceC, createServiceC);
-    app.mount(document.createElement('div'));
+    app.mount(document.createElement("div"));
     app.unmount();
   });
 
   it("should not equal", () => {
     const app = createApp({
+      render() {},
       setup() {
-        const serviceC = useDInject(IServiceC);
-        const serviceC2 = useDInjectNew(IServiceC);
+        const serviceC = useInject(IServiceC);
+        const serviceC2 = useInjectNew(IServiceC);
         expect(serviceC !== serviceC2).toBeTruthy();
-      }
+      },
     });
     const scope = createDIScope();
     app.use(scope);
     scope.provide(IServiceA, createServiceA);
     scope.provide(IServiceB, createServiceB);
     scope.provide(IServiceC, createServiceC);
-    app.mount(document.createElement('div'));
+    app.mount(document.createElement("div"));
+    app.unmount();
+  });
+
+  it("should work specify", () => {
+    const app = createApp({
+      render() {},
+      setup() {
+        const serviceC = useInject(IServiceC);
+        const serviceA = useInject(IServiceA);
+        const serviceANew = useInjectNew(IServiceA);
+        expect(serviceA).not.toEqual(serviceC.storeA);
+        expect(serviceA).not.toEqual(serviceANew);
+        expect(serviceC.hello()).toEqual("storeb2storea2storeb2storec");
+      },
+    });
+    const scope = createDIScope();
+    app.use(scope);
+
+    scope.provide(IServiceA, createServiceA);
+    scope.provide(IServiceB, createServiceB);
+    const provision = scope.provide(IServiceC, createServiceC);
+    const subProvistion = provision.specify(IServiceA, createServiceA2);
+    provision.specify(IServiceB, createServiceB2);
+    subProvistion.specify(IServiceB, createServiceB2);
+
+    app.mount(document.createElement("div"));
     app.unmount();
   });
 });
