@@ -1,6 +1,6 @@
 {
   "name": "hook-di",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "scripts": {
     "build": "rollup -c rollup.config.js",
     "test": "vitest"
@@ -33,7 +33,10 @@
   "typesVersions": {
     "*": {
       "*": [
-        "dist/*"
+        "dist/index.d.ts"
+      ],
+      "vue": [
+        "dist/vue.d.ts"
       ]
     }
   },
