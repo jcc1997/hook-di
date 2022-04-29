@@ -153,7 +153,9 @@ function _createDIScope(ctx: DIContext) {
   function run<T extends (...args: any) => any = (...args: any) => any>(
     fn: T
   ): ReturnType<T> {
-    if (currentRootDIContext) throw new Error("hook-di: di conflicts");
+    if (currentRootDIContext && currentRootDIContext !== ctx) throw new Error("hook-di: di conflicts");
+    if (currentRootDIContext === ctx) return fn();
+
     currentRootDIContext = ctx;
     try {
       return fn();

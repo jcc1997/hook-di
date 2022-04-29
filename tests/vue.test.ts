@@ -7,47 +7,18 @@ import {
   useInjectNew,
 } from "../src/vue";
 import { createApp } from "vue";
-import { inject } from "../src/core";
 import {
-  // createServiceA,
+  createServiceA,
   createServiceA2,
-  // createServiceB,
+  createServiceB,
   createServiceB2,
-  // createServiceC,Î
+  createServiceC,
   IServiceA,
   IServiceB,
   IServiceC,
+  recursiveServiceA,
+  recursiveServiceB,
 } from "./services";
-
-function createServiceA() {
-  const storeB = useInject(IServiceB);
-  return {
-    a: "storea",
-    hello() {
-      return storeB.hello() + "storea";
-    },
-  };
-}
-
-function createServiceB() {
-  return {
-    b: "storeb",
-    hello() {
-      return "storeb";
-    },
-  };
-}
-
-function createServiceC() {
-  const storeA = inject(IServiceA);
-  const storeB = inject(IServiceB);
-  return {
-    c: "storec",
-    hello() {
-      return storeA.hello() + storeB.hello() + "storec";
-    },
-  };
-}
 
 describe("vue di tests", () => {
   vi.useFakeTimers();
@@ -62,8 +33,8 @@ describe("vue di tests", () => {
         const serviceA = useInject(IServiceA);
         expect(serviceA.hello()).toEqual("storebstorea");
 
-        const serviceB = useDIScope().inject(IServiceB);
-        expect(serviceB.hello()).toEqual("storeb");
+        const serviceB = useDIScope()?.inject(IServiceB);
+        expect(serviceB?.hello()).toEqual("storeb");
       },
     });
     app.use(createDIScope());
@@ -171,5 +142,28 @@ describe("vue di tests", () => {
 
     app.mount(document.createElement("div"));
     app.unmount();
+  });
+
+  it("should work when using delay to recursive", async () => {
+    let pms
+    const app = createApp({
+      render() {},
+      async setup() {
+        const serviceB = useInject(IServiceB);
+        const serviceA = useInject(IServiceA);
+        expect(serviceA.hello()).toEqual('undefinedstorea');
+        expect(serviceB.hello()).toEqual('storeb');
+        pms = Promise.resolve().then(() => serviceA.hello());
+      },
+    });
+    const scope = createDIScope();
+    app.use(scope);
+
+    scope.provide(IServiceA, recursiveServiceA);
+    scope.provide(IServiceB, recursiveServiceB);
+
+    app.mount(document.createElement("div"));
+    app.unmount();
+    return expect(pms).resolves.toEqual('storebstorea')
   });
 });

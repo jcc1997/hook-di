@@ -7,7 +7,7 @@ import {
   provide,
   getCurrentScope,
 } from "./core";
-import { getCurrentInstance } from "vue";
+import { ref, getCurrentInstance, Ref } from "vue";
 export type { InjectionKey } from "./core";
 
 export function useDIScope(): DIScope | undefined {
@@ -17,14 +17,23 @@ export function useDIScope(): DIScope | undefined {
 function _runInScope<T extends (...args: any) => any = (...args: any) => any>(
   fn: T
 ): ReturnType<T> {
-  const scope = getCurrentScope();
+  let scope = getCurrentScope();
   if (!scope) {
-    const ctx = useDIScope();
-    if (!ctx) throw new Error("hook-di/vue: no di scope");
-    return ctx.run(fn);
-  } else {
-    return fn();
+    scope = useDIScope();
   }
+  if (!scope) throw new Error("hook-di/vue: no di scope");
+  return scope.run(fn);
+}
+
+function _runInScopeAsync<T extends (...args: any) => any = (...args: any) => any>(
+  fn: T
+): Promise<ReturnType<T>> {
+  let scope = getCurrentScope();
+  if (!scope) {
+    scope = useDIScope();
+  }
+  if (!scope) throw new Error("hook-di/vue: no di scope");
+  return Promise.resolve().then(() => scope!.run(fn));
 }
 
 export function useProvide<T>(key: InjectionKey<T>, ctorHook: () => T) {
@@ -43,6 +52,16 @@ export function useInjectNew<T>(key: InjectionKey<T>) {
   return _runInScope(() => {
     return injectNew(key);
   });
+}
+
+export function delay<T>(hook: (key: InjectionKey<T>) => T): (key: InjectionKey<T>) => Ref<T | undefined> {
+  return (key: InjectionKey<T>) => {
+    const val: Ref<T | undefined> = ref(undefined);
+    _runInScopeAsync(() => {
+      val.value = hook(key);
+    })
+    return val;
+  }
 }
 
 export function createDIScope(): DIScope & {
