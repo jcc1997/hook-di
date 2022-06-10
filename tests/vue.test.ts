@@ -6,7 +6,7 @@ import {
   useDIScope,
   useInjectNew,
 } from "../src/vue";
-import { createApp } from "vue";
+import { createApp } from "vue-demi";
 import {
   createServiceA,
   createServiceA2,

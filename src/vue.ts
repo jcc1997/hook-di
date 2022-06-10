@@ -7,7 +7,7 @@ import {
   provide,
   getCurrentScope,
 } from "./core";
-import { ref, getCurrentInstance, Ref } from "vue";
+import { ref, getCurrentInstance, Ref } from "vue-demi";
 export type { InjectionKey } from "./core";
 
 export function useDIScope(): DIScope | undefined {

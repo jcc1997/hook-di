@@ -1,42 +1,39 @@
 {
   "name": "hook-di",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "scripts": {
     "build": "rollup -c rollup.config.js",
     "test": "vitest"
   },
-  "main": "dist/index.cjs",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "unpkg": "dist/index.iife.js",
+  "main": "dist/cjs/index.cjs",
+  "module": "dist/es/index.mjs",
+  "types": "dist/es/index.d.ts",
   "engines": {
     "node": ">= 12.7.0"
   },
   "exports": {
     ".": {
-      "browser": "./dist/index.esm-browser.js",
       "node": {
-        "import": "./dist/index.mjs",
-        "require": "./dist/index.cjs"
+        "import": "./dist/es/index.mjs",
+        "require": "./dist/cjs/index.cjs"
       },
-      "import": "./dist/index.mjs"
+      "import": "./dist/cjs/index.mjs"
     },
     "./vue": {
-      "browser": "./dist/vue.esm-browser.js",
       "node": {
-        "import": "./dist/vue.mjs",
-        "require": "./dist/vue.cjs"
+        "import": "./dist/es/vue.mjs",
+        "require": "./dist/cjs/vue.cjs"
       },
-      "import": "./dist/vue.mjs"
+      "import": "./dist/es/vue.mjs"
     }
   },
   "typesVersions": {
     "*": {
       "*": [
-        "dist/index.d.ts"
+        "dist/es/index.d.ts"
       ],
       "vue": [
-        "dist/vue.d.ts"
+        "dist/es/vue.d.ts"
       ]
     }
   },
@@ -63,5 +60,8 @@
   "license": "MIT",
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "vue-demi": "*"
   }
 }
