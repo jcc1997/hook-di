@@ -82,5 +82,6 @@ export function createDIScope(): DIScope & {
     provide: scope.provide.bind(scope),
     inject: scope.inject.bind(scope),
     injectNew: scope.injectNew.bind(scope),
+    register: scope.register.bind(scope),
   };
 }

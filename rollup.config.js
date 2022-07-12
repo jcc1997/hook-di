@@ -3,6 +3,8 @@ import path from 'path'
 import ts from 'rollup-plugin-typescript2'
 import resolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
+// import cleanup from 'rollup-plugin-cleanup'
+import del from 'rollup-plugin-delete'
 
 const pkg = require('./package.json')
 
@@ -65,6 +67,8 @@ function createConfig(format) {
     plugins: [
       tsPlugin,
       ...nodePlugins,
+      // cleanup(),
+      del({ targets: `dist/${format}` }),
     ],
     output,
   }

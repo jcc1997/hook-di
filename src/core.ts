@@ -165,8 +165,8 @@ function _createDIScope(ctx: DIContext) {
   }
   return {
     run,
-    provide<T>(key: InjectionKey<T>, ctorHook: () => T) {
-      return run(() => provide(key, ctorHook));
+    provide<T>(key: InjectionKey<T>, ctor: () => T) {
+      return run(() => provide(key, ctor));
     },
     inject<T>(key: InjectionKey<T>): T {
       return run(() => inject(key));
@@ -174,6 +174,9 @@ function _createDIScope(ctx: DIContext) {
     injectNew<T>(key: InjectionKey<T>): T {
       return run(() => injectNew(key));
     },
+    register<T>({ key, ctor }: Injectable<T>) {
+      return run(() => provide(key, ctor));
+    }
   };
 }
 
@@ -196,3 +199,15 @@ export function getCurrentScope(): DIScope | undefined {
 }
 
 export type DIScope = ReturnType<typeof createDIScope>;
+
+export type Injectable<T> = {
+  key: InjectionKey<T>;
+  ctor: () => T;
+}
+
+export function defineInjectable<T>(key: InjectionKey<T>, ctor: () => T): Injectable<T> {
+  return {
+    key,
+    ctor,
+  }
+}
