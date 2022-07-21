@@ -1,12 +1,12 @@
 {
   "name": "hook-di",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "scripts": {
     "build": "rollup -c rollup.config.js",
     "test": "vitest"
   },
-  "main": "dist/cjs/index.cjs",
-  "module": "dist/es/index.mjs",
+  "main": "dist/cjs/index.js",
+  "module": "dist/es/index.js",
   "types": "dist/es/index.d.ts",
   "engines": {
     "node": ">= 12.7.0"
@@ -14,17 +14,17 @@
   "exports": {
     ".": {
       "node": {
-        "import": "./dist/es/index.mjs",
-        "require": "./dist/cjs/index.cjs"
+        "import": "./dist/es/index.js",
+        "require": "./dist/cjs/index.js"
       },
-      "import": "./dist/cjs/index.mjs"
+      "import": "./dist/cjs/index.js"
     },
     "./vue": {
       "node": {
-        "import": "./dist/es/vue.mjs",
-        "require": "./dist/cjs/vue.cjs"
+        "import": "./dist/es/vue.js",
+        "require": "./dist/cjs/vue.js"
       },
-      "import": "./dist/es/vue.mjs"
+      "import": "./dist/es/vue.js"
     }
   },
   "typesVersions": {
