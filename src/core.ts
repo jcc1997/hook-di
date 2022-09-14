@@ -9,7 +9,7 @@ type ServiceContextMap = {
   };
 };
 
-type RootServiceContextMap = Required<Pick<ServiceContextMap, 'value'>>;
+type RootServiceContextMap = Required<Pick<ServiceContextMap, "value">>;
 
 type ServiceContext<T> = [
   provider: () => T,
@@ -149,11 +149,18 @@ export function injectNew<T>(key: InjectionKey<T>): T {
   return injection;
 }
 
+export function lazyInject<T>(key: InjectionKey<T>): () => T {
+  const currentScope = getCurrentScope();
+  if (!currentScope) throw new Error("hook-di: must use in di scope");
+  return () => currentScope.inject<T>(key);
+}
+
 function _createDIScope(ctx: DIContext) {
   function run<T extends (...args: any) => any = (...args: any) => any>(
     fn: T
   ): ReturnType<T> {
-    if (currentRootDIContext && currentRootDIContext !== ctx) throw new Error("hook-di: di conflicts");
+    if (currentRootDIContext && currentRootDIContext !== ctx)
+      throw new Error("hook-di: di conflicts");
     if (currentRootDIContext === ctx) return fn();
 
     currentRootDIContext = ctx;
@@ -174,9 +181,9 @@ function _createDIScope(ctx: DIContext) {
     injectNew<T>(key: InjectionKey<T>): T {
       return run(() => injectNew(key));
     },
-    register<T>({ key, ctor }: Injectable<T>) {
+    register<T>({ key, ctor }: Implement<T>) {
       return run(() => provide(key, ctor));
-    }
+    },
   };
 }
 
@@ -200,14 +207,18 @@ export function getCurrentScope(): DIScope | undefined {
 
 export type DIScope = ReturnType<typeof createDIScope>;
 
-export type Injectable<T> = {
+export type Implement<T> = {
   key: InjectionKey<T>;
   ctor: () => T;
-}
+};
 
-export function defineInjectable<T>(key: InjectionKey<T>, ctor: () => T): Injectable<T> {
+export function impl<T>(key: InjectionKey<T>, ctor: () => T): Implement<T> {
   return {
     key,
     ctor,
-  }
+  };
+}
+
+export function declareInterface<T>(key: string): InjectionKey<T> {
+  return Symbol(key);
 }
