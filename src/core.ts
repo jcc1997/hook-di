@@ -74,6 +74,10 @@ export function provide<T>(key: InjectionKey<T>, ctorHook: () => T): Provision {
   return _newProvision(serviceContextMap);
 }
 
+export function register<T>({ key, ctor }: Implement<T>) {
+  return provide(key, ctor);
+}
+
 function _endOfArray<T>(arr: T[]) {
   return arr[arr.length - 1];
 }
@@ -198,6 +202,13 @@ export function createDIScope() {
   return _createDIScope(ctx);
 }
 
+export function getContextKey<T = unknown>(): InjectionKey<T> | undefined {
+  if (currentRootDIContext && currentRootDIContext.callStack.length > 0) {
+    return _getKey(_endOfArray(currentRootDIContext.callStack));
+  }
+  return undefined;
+}
+
 export function getCurrentScope(): DIScope | undefined {
   if (currentRootDIContext) {
     return _createDIScope(currentRootDIContext);
@@ -212,13 +223,68 @@ export type Implement<T> = {
   ctor: () => T;
 };
 
-export function impl<T>(key: InjectionKey<T>, ctor: () => T): Implement<T> {
+export function impl<T>(
+  key: InjectionKey<T>,
+  ctor: (ctx: { aop: AOPType<T> }) => T
+): Implement<T> {
+  const _aspects: Record<string, Aspect<any>[]> = {};
   return {
     key,
-    ctor,
+    ctor: function () {
+      const inst = ctor({
+        aop: aop(key, _aspects),
+      });
+      Object.keys(_aspects).forEach((_prop) => {
+        const prop = _prop as keyof T;
+        if (!inst[prop])
+          throw new Error(`${String(prop)} not in ${String(key)}`);
+        // do aspect
+        inst[prop] = _pipeAspect(..._aspects[_prop])(inst[prop]);
+      });
+      return inst;
+    },
   };
 }
 
 export function declareInterface<T>(key: string): InjectionKey<T> {
   return Symbol(key);
+}
+
+/** aop */
+export type Aspect<T extends (...args: any[]) => any> = (
+  next: T,
+  ...args: Parameters<T>
+) => ReturnType<T>;
+
+export type AOPType<T> = <Prop extends keyof T>(
+  prop: Prop,
+  aspect: T[Prop] extends (...args: any[]) => any ? Aspect<T[Prop]> : never
+) => void;
+
+export function aop<T>(
+  _key: InjectionKey<T>,
+  aspects: Record<string, Aspect<any>[]>
+): AOPType<T> {
+  return function (prop, aspect) {
+    aspects = aspects || {};
+    aspects[prop as string] = aspects[prop as string] || [];
+    aspects[prop as string].push(aspect);
+  };
+}
+
+function _pipeAspect<T extends (...args: any[]) => any>(
+  ...aspects: Aspect<T>[]
+): (originFn: T) => T {
+  return (fn) => {
+    function dispatch(i: number): T {
+      if (i === aspects.length) {
+        return ((...args: Parameters<T>) => fn(...args)) as T;
+      } else {
+        const aspect = aspects[i];
+        return ((...args: Parameters<T>) =>
+          aspect(dispatch(i + 1), ...args)) as T;
+      }
+    }
+    return dispatch(0);
+  };
 }
