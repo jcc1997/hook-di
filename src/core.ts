@@ -223,10 +223,11 @@ export type Implement<T> = {
   ctor: () => T;
 };
 
-export function impl<T>(
-  key: InjectionKey<T>,
-  ctor: (ctx: { aop: AOPType<T> }) => T
-): Implement<T> {
+export type InjectionType<K extends InjectionKey<any>> = K extends InjectionKey<infer Type> ? Type : never;
+export function impl<K extends InjectionKey<any>>(
+  key: K,
+  ctor: (ctx: { aop: AOPType<InjectionType<K>> }) => InjectionType<K>
+): Implement<InjectionType<K>> {
   const _aspects: Record<string, Aspect<any>[]> = {};
   return {
     key,
@@ -235,11 +236,11 @@ export function impl<T>(
         aop: aop(key, _aspects),
       });
       Object.keys(_aspects).forEach((_prop) => {
-        const prop = _prop as keyof T;
+        const prop = _prop as keyof InjectionType<K>;
         if (!inst[prop])
           throw new Error(`${String(prop)} not in ${String(key)}`);
         // do aspect
-        inst[prop] = _pipeAspect(..._aspects[_prop])(inst[prop]);
+        inst[prop] = _pipeAspect(prop, ..._aspects[_prop])(inst[prop]);
       });
       return inst;
     },
@@ -253,6 +254,7 @@ export function declareInterface<T>(key: string): InjectionKey<T> {
 /** aop */
 export type Aspect<T extends (...args: any[]) => any> = (
   next: T,
+  context: { prop: string | number | symbol },
   ...args: Parameters<T>
 ) => ReturnType<T>;
 
@@ -261,10 +263,10 @@ export type AOPType<T> = <Prop extends keyof T>(
   aspect: T[Prop] extends (...args: any[]) => any ? Aspect<T[Prop]> : never
 ) => void;
 
-export function aop<T>(
-  _key: InjectionKey<T>,
+export function aop<K extends InjectionKey<any>>(
+  _key: K,
   aspects: Record<string, Aspect<any>[]>
-): AOPType<T> {
+): AOPType<InjectionType<K>> {
   return function (prop, aspect) {
     aspects = aspects || {};
     aspects[prop as string] = aspects[prop as string] || [];
@@ -273,6 +275,7 @@ export function aop<T>(
 }
 
 function _pipeAspect<T extends (...args: any[]) => any>(
+  prop: string | number | symbol,
   ...aspects: Aspect<T>[]
 ): (originFn: T) => T {
   return (fn) => {
@@ -282,7 +285,7 @@ function _pipeAspect<T extends (...args: any[]) => any>(
       } else {
         const aspect = aspects[i];
         return ((...args: Parameters<T>) =>
-          aspect(dispatch(i + 1), ...args)) as T;
+          aspect(dispatch(i + 1), { prop }, ...args)) as T;
       }
     }
     return dispatch(0);
