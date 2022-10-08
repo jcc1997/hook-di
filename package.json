@@ -1,6 +1,6 @@
 {
   "name": "hook-di",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "scripts": {
     "build": "rollup -c rollup.config.js",
     "test": "vitest"
@@ -20,7 +20,7 @@
         "import": "./dist/es/index.js",
         "require": "./dist/cjs/index.js"
       },
-      "import": "./dist/cjs/index.js"
+      "import": "./dist/es/index.js"
     },
     "./vue": {
       "node": {

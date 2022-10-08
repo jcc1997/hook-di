@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { trackable } from "../src/aop";
+import { markTrackable } from "../src/aop";
 import {
   createDIScope,
   declareInterface,
@@ -20,8 +20,8 @@ describe("aop tests", () => {
 
   it("should work", () => {
     const ServiceAImpl = impl(IService, function ({ aop }) {
-      const { track } = trackable();
-      aop("hello", track("hello", { param: true, result: true, time: true }));
+      const { track } = markTrackable(aop);
+      track("hello", { param: true, result: true, time: true });
 
       const inst = {
         a: "storea",

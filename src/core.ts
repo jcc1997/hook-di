@@ -263,6 +263,8 @@ export type AOPType<T> = <Prop extends keyof T>(
   aspect: T[Prop] extends (...args: any[]) => any ? Aspect<T[Prop]> : never
 ) => void;
 
+export type AOPTarget<AOP extends AOPType<any>> = AOP extends AOPType<infer Target> ? Target : never
+
 export function aop<K extends InjectionKey<any>>(
   _key: K,
   aspects: Record<string, Aspect<any>[]>
