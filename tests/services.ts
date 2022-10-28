@@ -1,5 +1,5 @@
 import { inject, InjectionKey } from "../src/core";
-import { delay } from '../src/vue';
+import { injectRef } from '../src/vue';
 
 export interface IServiceA {
   a: string;
@@ -77,7 +77,7 @@ export function createServiceB2() {
 }
 
 export function recursiveServiceA() {
-  const storeB = delay(inject)(IServiceB);
+  const storeB = injectRef(IServiceB);
   return {
     a: "storea",
     hello() {

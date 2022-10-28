@@ -54,7 +54,9 @@ export function useInjectNew<T>(key: InjectionKey<T>) {
   });
 }
 
-export function delay<T>(hook: (key: InjectionKey<T>) => T): (key: InjectionKey<T>) => Ref<T | undefined> {
+type InjectFn<T> = (key: InjectionKey<T>) => T
+
+function delay<T>(hook: InjectFn<T>): (key: InjectionKey<T>) => Ref<T | undefined> {
   return (key: InjectionKey<T>) => {
     const val: Ref<T | undefined> = ref(undefined);
     _runInScopeAsync(() => {
@@ -63,6 +65,9 @@ export function delay<T>(hook: (key: InjectionKey<T>) => T): (key: InjectionKey<
     return val;
   }
 }
+
+export const injectRef = delay(inject)
+export const injectRefNew = delay(injectNew)
 
 export function createDIScope(): DIScope & {
   install: (app: any, fn: (...args: any) => any) => void;
