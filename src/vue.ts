@@ -25,9 +25,9 @@ function _runInScope<T extends (...args: any) => any = (...args: any) => any>(
   return scope.run(fn);
 }
 
-function _runInScopeAsync<T extends (...args: any) => any = (...args: any) => any>(
-  fn: T
-): Promise<ReturnType<T>> {
+function _runInScopeAsync<
+  T extends (...args: any) => any = (...args: any) => any
+>(fn: T): Promise<ReturnType<T>> {
   let scope = getCurrentScope();
   if (!scope) {
     scope = useDIScope();
@@ -54,25 +54,28 @@ export function useInjectNew<T>(key: InjectionKey<T>) {
   });
 }
 
-type InjectFn<T> = (key: InjectionKey<T>) => T
+type InjectFn<T> = (key: InjectionKey<T>) => T;
 
-function delay<T>(hook: InjectFn<T>): (key: InjectionKey<T>) => Ref<T | undefined> {
+function delay<T>(
+  hook: InjectFn<T>
+): (key: InjectionKey<T>) => Ref<T | undefined> {
   return (key: InjectionKey<T>) => {
     const val: Ref<T | undefined> = ref(undefined);
     _runInScopeAsync(() => {
       val.value = hook(key);
-    })
+    });
     return val;
-  }
+  };
 }
 
-export const injectRef = delay(inject)
-export const injectRefNew = delay(injectNew)
+export const injectRef = delay(inject);
+export const injectRefNew = delay(injectNew);
 
 export function createDIScope(): DIScope & {
   install: (app: any, fn: (...args: any) => any) => void;
 } {
   const scope = _createDIScope();
+  const vueScope = _createDIScope();
   const install = function (app: any, fn: (...args: any) => any) {
     app.config.globalProperties.$hook_di_ctx = scope;
     if (fn) {
