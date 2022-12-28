@@ -73,6 +73,7 @@ export const injectRefNew = delay(injectNew);
 
 export function createDIScope(): DIScope & {
   install: (app: any, fn: (...args: any) => any) => void;
+  stop: () => void;
 } {
   const scope = _createDIScope();
   const vueScope = effectScope();
@@ -100,5 +101,6 @@ export function createDIScope(): DIScope & {
     inject: scope.inject.bind(scope),
     injectNew: scope.injectNew.bind(scope),
     register: scope.register.bind(scope),
+    stop: vueScope.stop.bind(vueScope),
   };
 }
