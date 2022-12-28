@@ -7,7 +7,7 @@ import {
   provide,
   getCurrentScope,
 } from "./core";
-import { ref, getCurrentInstance, Ref } from "vue-demi";
+import { ref, getCurrentInstance, Ref, effectScope } from "vue-demi";
 export type { InjectionKey } from "./core";
 
 export function useDIScope(): DIScope | undefined {
@@ -75,7 +75,16 @@ export function createDIScope(): DIScope & {
   install: (app: any, fn: (...args: any) => any) => void;
 } {
   const scope = _createDIScope();
-  const vueScope = _createDIScope();
+  const vueScope = effectScope();
+
+  for (const k in scope) {
+    const _k = k as keyof typeof scope;
+    const origin = scope[_k];
+    scope[_k] = (...args: any[]) => {
+      return vueScope.run(() => (origin as any)(...args));
+    };
+  }
+
   const install = function (app: any, fn: (...args: any) => any) {
     app.config.globalProperties.$hook_di_ctx = scope;
     if (fn) {
