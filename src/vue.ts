@@ -1,111 +1,39 @@
-import type { Ref } from 'vue-demi'
-import { effectScope, getCurrentInstance, ref } from 'vue-demi'
-import type {
-    DIScope,
-    InjectionKey,
-} from './core'
-import {
-    createDIScope as _createDIScope,
-    getCurrentScope,
-    inject,
-    injectNew,
-    provide,
-} from './core'
-export type { InjectionKey } from './core'
+import type { Scope } from './scope'
+import { getCurrentScope as _getCurrentScope, createScope } from '#interfaces'
+import { type App, getCurrentInstance, inject, type Plugin } from 'vue'
 
-export function useDIScope(): DIScope | undefined {
-    return getCurrentInstance()?.appContext.config.globalProperties.$hook_di_ctx
+const sym = Symbol('hook-di:global-scope')
+
+export default {
+  install(app) {
+    const globalScope = (app.config.globalProperties.__hook_di_globalScope
+      = createScope())
+    app.provide(sym, globalScope)
+  },
+} as Plugin
+
+export function getCurrentScope(app?: App<any>): Scope {
+  let scope = _getCurrentScope()
+  scope = scope ?? inject(sym)
+  scope
+    = scope
+    ?? (app || getCurrentInstance()?.appContext)?.config.globalProperties.__hook_di_globalScope
+  if (!scope) {
+    throw new Error('hook-di: No global scope found')
+  }
+
+  return scope
 }
 
-function _runInScope<T extends (...args: any) => any = (...args: any) => any>(
-    fn: T,
-): ReturnType<T> {
-    let scope = getCurrentScope()
-    if (!scope)
-        scope = useDIScope()
-
-    if (!scope)
-        throw new Error('hook-di/vue: no di scope')
-    return scope.run(fn)
+export const useShared: typeof import('./default').useShared = (
+  key,
+  { scope } = {},
+) => {
+  scope = scope || getCurrentScope()
+  return scope.useShared(key)
 }
 
-function _runInScopeAsync<
-    T extends (...args: any) => any = (...args: any) => any,
->(fn: T): Promise<ReturnType<T>> {
-    let scope = getCurrentScope()
-    if (!scope)
-        scope = useDIScope()
-
-    if (!scope)
-        throw new Error('hook-di/vue: no di scope')
-    return Promise.resolve().then(() => scope!.run(fn))
-}
-
-export function useProvide<T>(key: InjectionKey<T>, ctorHook: () => T) {
-    return _runInScope(() => {
-        return provide(key, ctorHook)
-    })
-}
-
-export function useInject<T>(key: InjectionKey<T>) {
-    return _runInScope(() => {
-        return inject(key)
-    })
-}
-
-export function useInjectNew<T>(key: InjectionKey<T>) {
-    return _runInScope(() => {
-        return injectNew(key)
-    })
-}
-
-type InjectFn<T> = (key: InjectionKey<T>) => T
-
-function delay<T>(
-    hook: InjectFn<T>,
-): (key: InjectionKey<T>) => Ref<T | undefined> {
-    return (key: InjectionKey<T>) => {
-        const val: Ref<T | undefined> = ref(undefined)
-        _runInScopeAsync(() => {
-            val.value = hook(key)
-        })
-        return val
-    }
-}
-
-export const injectRef = delay(inject)
-export const injectRefNew = delay(injectNew)
-
-export function createDIScope(): DIScope & {
-    install: (app: any, fn: (...args: any) => any) => void
-    stop: () => void
-    } {
-    const scope = _createDIScope()
-    const vueScope = effectScope()
-
-    for (const k in scope) {
-        const _k = k as keyof typeof scope
-        const origin = scope[_k]
-        scope[_k] = (...args: any[]) => {
-            return vueScope.run(() => (origin as any)(...args))
-        }
-    }
-
-    const install = function (app: any, fn: (...args: any) => any) {
-        app.config.globalProperties.$hook_di_ctx = scope
-        if (fn) {
-            if (typeof fn !== 'function')
-                throw new Error('hook-di/vue: option muse be function')
-            scope.run(fn)
-        }
-    }
-    return {
-        install,
-        run: scope.run.bind(scope),
-        provide: scope.provide.bind(scope),
-        inject: scope.inject.bind(scope),
-        injectNew: scope.injectNew.bind(scope),
-        register: scope.register.bind(scope),
-        stop: vueScope.stop.bind(vueScope),
-    }
+export const use: typeof import('./default').use = (key, { scope } = {}) => {
+  scope = scope || getCurrentScope()
+  return scope.use(key)
 }

@@ -1,32 +1,33 @@
 {
   "compilerOptions": {
-    "target": "ES5",
+
+    "baseUrl": ".",
     "module": "ESNext",
 
-    /* Basic Options */
-    "isolatedModules": true,
-
+    /* Module Resolution Options */
+    "moduleResolution": "node",
+    "paths": {
+      "#interfaces": ["src/default"]
+    },
+    "resolveJsonModule": true,
     /* Strict Type-Checking Options */
     "strict": true,
 
     /* Additional Checks */
     "noFallthroughCasesInSwitch": true,
 
-    /* Module Resolution Options */
-    "moduleResolution": "node",
+    "declaration": true,
+    "outDir": "dist",
     "esModuleInterop": true,
-    "resolveJsonModule": true,
-
     /* Experimental Options */
     // "experimentalDecorators": true,
     // "emitDecoratorMetadata": true,
 
     /* Advanced Options */
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-
-    "outDir": "dist",
-    "declaration": true
+    /* Basic Options */
+    "isolatedModules": true,
+    "skipLibCheck": true
   },
-  "include": ["src/**/*", "tests/**/*"]
+  "include": ["src/**/*"]
 }
