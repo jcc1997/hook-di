@@ -1,10 +1,10 @@
-import { basename, join } from 'node:path'
+import { join } from 'node:path'
 import { defineConfig } from 'vite'
 import viteDts from 'vite-plugin-dts'
 import { devDependencies } from './package.json'
 
 export default defineConfig(({ isSsrBuild }) => {
-  console.log(isSsrBuild)
+  console.log('isSsrBuild', isSsrBuild)
   return {
     resolve: {
       alias: {

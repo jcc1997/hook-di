@@ -7,7 +7,9 @@
     /* Module Resolution Options */
     "moduleResolution": "node",
     "paths": {
-      "#interfaces": ["src/default"]
+      "#interfaces": ["src/default.ts"],
+      "hook-di": ["src/index.ts"],
+      "hook-di/vue": ["src/vue.ts"]
     },
     "resolveJsonModule": true,
     /* Strict Type-Checking Options */

@@ -1,6 +1,6 @@
 import { createScope, use, useShared } from 'hook-di'
 import { describe, expect, it } from 'vitest'
-import { AKey, useA } from './hooks'
+import { AKey, useA, useA2, UseHelloKey, useHookUsingA } from './hooks'
 
 describe('basic usage in node', () => {
   it('register and use in single scope', () => {
@@ -40,7 +40,7 @@ describe('basic usage in node', () => {
 })
 
 describe('chain test', () => {
-  it('register and use in scopes tree', () => {
+  it('register and useShared in scopes tree', () => {
     const scope = createScope()
 
     scope.register(AKey, useA)
@@ -59,21 +59,41 @@ describe('chain test', () => {
       })
     })
   })
-})
 
-describe('async test', () => {
-  it('use async method', async () => {
+  it('register and useShared different in scopes tree', () => {
     const scope = createScope()
 
     scope.register(AKey, useA)
 
-    await scope.run(async () => {
-      await new Promise(resolve => setTimeout(resolve, 100))
-
+    scope.run(() => {
       const a = useShared(AKey)
 
-      expect(a.name()).toBe('useA')
+      console.log(a.name())
       a.log('register and use in single scope')
+
+      const scopeChild = createScope()
+      scopeChild.register(AKey, useA2)
+      scopeChild.run(() => {
+        const childA = useShared(AKey)
+
+        expect(a.name()).not.toEqual('useA2')
+        expect(a).not.toEqual(childA)
+      })
+    })
+  })
+})
+
+describe('scope dependencies', () => {
+  it('use hook in hook', () => {
+    const scope = createScope()
+
+    scope.register(AKey, useA)
+    scope.register(UseHelloKey, useHookUsingA)
+
+    scope.run(() => {
+      const hello = use(UseHelloKey)
+
+      expect(hello.hello()).toBe('hello, useA')
     })
   })
 })

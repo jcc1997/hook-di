@@ -9,7 +9,7 @@ export function useShared<T>(
 ) {
   scope = scope || getCurrentScope()
 
-  const shared = scope.shared[key] || (scope.shared[key] = scope.hooks[key]())
+  const shared = scope.useShared(key)
   return shared
 }
 
@@ -18,7 +18,7 @@ export function use<T>(
   { scope }: { scope?: Scope } = {},
 ) {
   scope = scope || getCurrentScope()
-  return scope.hooks[key]()
+  return scope.use(key)
 }
 
 export function getCurrentScope(): Scope {
