@@ -31,9 +31,7 @@ export abstract class ScopeBase implements Scope {
     let scope: Scope | undefined = this
     while (scope) {
       if (key in scope.hooks) {
-        return this.circle(key, () => {
-          return scope!.hooks[key]()
-        })
+        return this.circle(key, () => scope!.hooks[key]())
       }
       scope = scope.parent
     }
@@ -50,7 +48,7 @@ export abstract class ScopeBase implements Scope {
       }
 
       if (key in scope.hooks) {
-        return this.circle(key, scope.shared[key] = scope.hooks[key]())
+        return this.circle(key, () => (scope!.shared[key] = scope!.hooks[key]()))
       }
 
       scope = scope.parent
@@ -64,7 +62,7 @@ export abstract class ScopeBase implements Scope {
     // check circular dependency
     if (this.nodes.includes(key)) {
       this.nodes = undefined
-      throw new Error(`hook-di: circular dependency for ${key as string}`)
+      throw new Error(`hook-di: circular dependency for ${key.toString()}`)
     }
     else {
       this.nodes.push(key)

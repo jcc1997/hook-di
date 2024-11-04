@@ -45,3 +45,31 @@ export const useHookUsingA = function () {
     },
   }
 }
+
+export interface UseB {
+  b: () => string
+}
+export const BKey = InjectionKey<UseB>('UseB')
+
+export const useBdepA: () => UseB = function () {
+  const a = useShared(AKey)
+
+  return {
+    b() {
+      return `b: ${a.name()}`
+    },
+  }
+}
+
+export const useAdepB: () => UseA = function () {
+  const b = useShared(BKey)
+
+  return {
+    name() {
+      return b.b()
+    },
+    log(...params) {
+      console.log('useA: ', ...params)
+    },
+  }
+}
