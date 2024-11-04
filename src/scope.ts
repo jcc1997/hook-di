@@ -24,12 +24,16 @@ export abstract class ScopeBase implements Scope {
     this.hooks[key] = hook
   }
 
+  nodes?: (string | symbol | InjectionKey<any>)[]
+
   use<T>(key: string | symbol | InjectionKey<T>): T {
     // eslint-disable-next-line ts/no-this-alias
     let scope: Scope | undefined = this
     while (scope) {
       if (key in scope.hooks) {
-        return scope.hooks[key]()
+        return this.circle(key, () => {
+          return scope!.hooks[key]()
+        })
       }
       scope = scope.parent
     }
@@ -46,13 +50,30 @@ export abstract class ScopeBase implements Scope {
       }
 
       if (key in scope.hooks) {
-        return (scope.shared[key] = scope.hooks[key]())
+        return this.circle(key, scope.shared[key] = scope.hooks[key]())
       }
 
       scope = scope.parent
     }
 
     throw new Error(`hook-di: no hook for ${key as string}`)
+  }
+
+  circle<T, R>(key: (string | symbol | InjectionKey<T>), fn: () => R): R {
+    this.nodes = this.nodes || []
+    // check circular dependency
+    if (this.nodes.includes(key)) {
+      this.nodes = undefined
+      throw new Error(`hook-di: circular dependency for ${key as string}`)
+    }
+    else {
+      this.nodes.push(key)
+    }
+
+    const result = fn()
+    this.nodes = undefined
+
+    return result
   }
 
   abstract run(fn: () => any): void | Promise<void>
