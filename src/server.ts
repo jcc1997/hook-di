@@ -1,24 +1,30 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
-import { type InjectionKey, type Scope, ScopeBase } from './scope'
+import { type Scope, ScopeBase } from './scope'
 
 const scopeAsyncLocalStorage = new AsyncLocalStorage<Scope>()
 
-export function useShared<T>(
-  key: string | symbol | InjectionKey<T>,
-  { scope }: { scope?: Scope } = {},
-) {
-  scope = scope || getCurrentScope()
-
-  const shared = scope.useShared(key)
-  return shared
-}
-
-export function use<T>(
-  key: string | symbol | InjectionKey<T>,
-  { scope }: { scope?: Scope } = {},
-) {
+export const use: typeof import('./default').use = (key, { scope } = {}) => {
   scope = scope || getCurrentScope()
   return scope.use(key)
+}
+
+export const useShared: typeof import('./default').useShared = (
+  key,
+  { scope } = {},
+) => {
+  scope = scope || getCurrentScope()
+  return scope.useShared(key)
+}
+
+export const lazy: typeof import('./default').lazy = {
+  use: (key, { scope } = {}) => {
+    scope = scope || getCurrentScope()
+    return scope.lazy.use(key)
+  },
+  useShared: (key, { scope } = {}) => {
+    scope = scope || getCurrentScope()
+    return scope.lazy.useShared(key)
+  },
 }
 
 export function getCurrentScope(): Scope {

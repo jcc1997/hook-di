@@ -1,6 +1,6 @@
 import { createScope, use, useShared } from 'hook-di'
 import { describe, expect, it } from 'vitest'
-import { AKey, BKey, useA, useAdepB, useBdepA } from './hooks'
+import { AKey, BKey, useA, useAdepB, useAdepBLazy, useBdepA } from './hooks'
 
 describe('basic usage in node', () => {
   it('register and use in single scope', () => {
@@ -92,6 +92,20 @@ describe('circle test', () => {
       catch (e) {
         expect((e as Error).message).toContain('circular dependency')
       }
+    })
+  })
+})
+
+describe('lazy test', () => {
+  it('use lazy use', () => {
+    const scope = createScope()
+
+    scope.register(AKey, useAdepBLazy)
+    scope.register(BKey, useBdepA)
+
+    scope.run(() => {
+      const a = useShared(AKey)
+      expect(a.log()).toBe('useAdepBLazy: b-a')
     })
   })
 })

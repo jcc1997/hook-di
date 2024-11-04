@@ -25,6 +25,11 @@ export function getCurrentScope(app?: App<any>): Scope {
   return scope
 }
 
+export const use: typeof import('./default').use = (key, { scope } = {}) => {
+  scope = scope || getCurrentScope()
+  return scope.use(key)
+}
+
 export const useShared: typeof import('./default').useShared = (
   key,
   { scope } = {},
@@ -33,7 +38,13 @@ export const useShared: typeof import('./default').useShared = (
   return scope.useShared(key)
 }
 
-export const use: typeof import('./default').use = (key, { scope } = {}) => {
-  scope = scope || getCurrentScope()
-  return scope.use(key)
+export const lazy: typeof import('./default').lazy = {
+  use: (key, { scope } = {}) => {
+    scope = scope || getCurrentScope()
+    return scope.lazy.use(key)
+  },
+  useShared: (key, { scope } = {}) => {
+    scope = scope || getCurrentScope()
+    return scope.lazy.useShared(key)
+  },
 }

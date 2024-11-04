@@ -11,6 +11,10 @@ export interface Scope {
   register: <T>(key: string | symbol, hook: () => T) => any
   use: <T>(key: string | symbol | InjectionKey<T>) => T
   useShared: <T>(key: string | symbol | InjectionKey<T>) => T
+  lazy: {
+    use: <T>(key: string | symbol | InjectionKey<T>) => () => T
+    useShared: <T>(key: string | symbol | InjectionKey<T>) => () => T
+  }
 
   run: (fn: () => any) => void | Promise<void>
 }
@@ -55,6 +59,17 @@ export abstract class ScopeBase implements Scope {
     }
 
     throw new Error(`hook-di: no hook for ${key as string}`)
+  }
+
+  lazy = {
+    use: <T>(key: string | symbol | InjectionKey<T>) => {
+      let cache: T | undefined
+      return () => cache ?? (cache = this.use(key))
+    },
+    useShared: <T>(key: string | symbol | InjectionKey<T>) => {
+      let cache: T | undefined
+      return () => cache ?? (cache = this.useShared(key))
+    },
   }
 
   circle<T, R>(key: (string | symbol | InjectionKey<T>), fn: () => R): R {

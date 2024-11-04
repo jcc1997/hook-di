@@ -1,9 +1,9 @@
-import { useShared } from '#interfaces'
+import { lazy, useShared } from '#interfaces'
 import { InjectionKey } from '../scope'
 
 export interface UseA {
   name: () => string
-  log: (...params: any[]) => void
+  log: (...params: any[]) => string
 }
 export const AKey = InjectionKey<UseA>('UseA')
 
@@ -19,7 +19,7 @@ export const useA: () => UseA = function () {
       return name
     },
     log(...params) {
-      console.log('useA: ', ...params)
+      return `useA: ${params}`
     },
   }
 }
@@ -31,7 +31,7 @@ export const useA2: () => UseA = function () {
       return name
     },
     log(...params) {
-      console.log('useA2: ', ...params)
+      return `useA2: ${params}`
     },
   }
 }
@@ -56,7 +56,7 @@ export const useBdepA: () => UseB = function () {
 
   return {
     b() {
-      return `b: ${a.name()}`
+      return `b-${a.name()}`
     },
   }
 }
@@ -69,7 +69,20 @@ export const useAdepB: () => UseA = function () {
       return b.b()
     },
     log(...params) {
-      console.log('useA: ', ...params)
+      return `useAdepB: ${params}`
+    },
+  }
+}
+
+export const useAdepBLazy: () => UseA = function () {
+  const b = lazy.useShared(BKey)
+
+  return {
+    name() {
+      return 'a'
+    },
+    log(..._params) {
+      return `useAdepBLazy: ${b().b()}`
     },
   }
 }

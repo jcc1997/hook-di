@@ -2,6 +2,14 @@ import { type InjectionKey, type Scope, ScopeBase } from './scope'
 
 export const scopes: { current?: Scope } = {}
 
+export function use<T = unknown>(
+  key: string | symbol | InjectionKey<T>,
+  { scope }: { scope?: Scope } = {},
+) {
+  scope = scope || getCurrentScope()
+  return scope.use(key)
+}
+
 export function useShared<T = unknown>(
   key: string | symbol | InjectionKey<T>,
   { scope }: { scope?: Scope } = {},
@@ -11,12 +19,15 @@ export function useShared<T = unknown>(
   return scope.useShared(key)
 }
 
-export function use<T = unknown>(
-  key: string | symbol | InjectionKey<T>,
-  { scope }: { scope?: Scope } = {},
-) {
-  scope = scope || getCurrentScope()
-  return scope.use(key)
+export const lazy = {
+  use: <T = unknown>(key: string | symbol | InjectionKey<T>, { scope }: { scope?: Scope } = {}) => {
+    scope = scope || getCurrentScope()
+    return scope.lazy.use(key)
+  },
+  useShared: <T = unknown>(key: string | symbol | InjectionKey<T>, { scope }: { scope?: Scope } = {}) => {
+    scope = scope || getCurrentScope()
+    return scope.lazy.useShared(key)
+  },
 }
 
 export function getCurrentScope(): Scope {
