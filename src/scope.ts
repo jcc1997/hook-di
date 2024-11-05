@@ -76,8 +76,9 @@ export abstract class ScopeBase implements Scope {
     this.nodes = this.nodes || []
     // check circular dependency
     if (this.nodes.includes(key)) {
+      const msg = `hook-di: circular dependency for ${key.toString()} ${this.nodes.map(k => k.toString()).join(' -> ')}`
       this.nodes = undefined
-      throw new Error(`hook-di: circular dependency for ${key.toString()}`)
+      throw new Error(msg)
     }
     else {
       this.nodes.push(key)
