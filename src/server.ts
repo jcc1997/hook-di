@@ -1,6 +1,8 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { type Scope, ScopeBase } from './scope'
 
+export { defineHook } from './scope'
+
 const scopeAsyncLocalStorage = new AsyncLocalStorage<Scope>()
 
 export const use: typeof import('./default').use = (key, { scope } = {}) => {

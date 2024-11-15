@@ -1,5 +1,8 @@
 import { type InjectionKey, type Scope, ScopeBase } from './scope'
 
+export { defineHook } from './scope'
+export type { InjectionKey, Scope } from './scope'
+
 export const scopes: { current?: Scope } = {}
 
 export function use<T = unknown>(

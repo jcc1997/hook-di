@@ -92,3 +92,7 @@ export abstract class ScopeBase implements Scope {
 
   abstract run(fn: () => any): void | Promise<void>
 }
+
+export function defineHook<K extends InjectionKey<any>>(hook: () => K extends InjectionKey<infer T> ? T : never) {
+  return hook
+}

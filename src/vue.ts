@@ -1,14 +1,22 @@
-import type { Scope } from './scope'
+import type { InjectionKey, Scope } from './scope'
 import { getCurrentScope as _getCurrentScope, createScope } from '#interfaces'
-import { type App, getCurrentInstance, inject, type Plugin } from 'vue'
+import { type App, type EffectScope, effectScope, getCurrentInstance, inject, type Plugin } from 'vue'
+
+export type { Scope } from './scope'
+export { InjectionKey } from './scope'
 
 const sym = Symbol('hook-di:global-scope')
 
 export default {
   install(app) {
+    const vueScope = (app.config.globalProperties.__hook_di_globalVueScope
+      = effectScope())
     const globalScope = (app.config.globalProperties.__hook_di_globalScope
       = createScope())
     app.provide(sym, globalScope)
+    app.onUnmount(() => {
+      vueScope.stop()
+    })
   },
 } as Plugin
 
@@ -47,4 +55,11 @@ export const lazy: typeof import('./default').lazy = {
     scope = scope || getCurrentScope()
     return scope.lazy.useShared(key)
   },
+}
+
+export function defineHook<K extends InjectionKey<any>>(hook: () => K extends InjectionKey<infer T> ? T : never, app?: App<any>) {
+  return () => {
+    const vueScope: EffectScope = (app || getCurrentInstance()?.appContext)?.config.globalProperties.__hook_di_globalVueScope
+    return vueScope.run(() => hook())
+  }
 }
